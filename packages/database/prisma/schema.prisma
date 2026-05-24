@@ -1,0 +1,532 @@
+// Nobility Platform — Prisma Schema
+// Luxury Global Textile Trade Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// AUTH & ORGANIZATIONS
+// ─────────────────────────────────────────────
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  plan        OrgPlan  @default(STARTER)
+  logoUrl     String?
+  website     String?
+  industry    String?
+  country     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users           User[]
+  suppliers       Supplier[]
+  contacts        Contact[]
+  opportunities   Opportunity[]
+  quotes          Quote[]
+  orders          Order[]
+  shipments       Shipment[]
+  activities      Activity[]
+  fabrics         Fabric[]
+
+  @@map("organizations")
+}
+
+enum OrgPlan {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  title         String?
+  avatar        String?
+  role          UserRole  @default(MEMBER)
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  activities    Activity[]
+  quotes        Quote[]
+  orders        Order[]
+
+  @@index([orgId])
+  @@index([email])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// ─────────────────────────────────────────────
+// SUPPLIERS
+// ─────────────────────────────────────────────
+
+model Supplier {
+  id              String       @id @default(cuid())
+  name            String
+  legalName       String?
+  country         String
+  city            String?
+  region          String?
+  type            SupplierType
+  tier            SupplierTier @default(TIER2)
+  specialties     String[]     @default([])
+  certifications  String[]     @default([])
+  moqMeters       Float?
+  leadTimeDays    Int?
+  priceRangeMin   Float?
+  priceRangeMax   Float?
+  currency        String       @default("USD")
+  rating          Float?       @default(0)
+  isVerified      Boolean      @default(false)
+  isActive        Boolean      @default(true)
+  website         String?
+  email           String?
+  phone           String?
+  profileImage    String?
+  description     String?      @db.Text
+  notes           String?      @db.Text
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  orgId           String
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  fabrics         Fabric[]
+  contacts        Contact[]
+  opportunities   Opportunity[]
+  quotes          Quote[]
+  orders          Order[]
+
+  @@index([orgId])
+  @@index([country])
+  @@index([type])
+  @@index([tier])
+  @@map("suppliers")
+}
+
+enum SupplierType {
+  MILL
+  FACTORY
+  TRADER
+  AGENT
+  DISTRIBUTOR
+}
+
+enum SupplierTier {
+  TIER1
+  TIER2
+  TIER3
+}
+
+// ─────────────────────────────────────────────
+// FABRIC CATALOG
+// ─────────────────────────────────────────────
+
+model Fabric {
+  id               String    @id @default(cuid())
+  sku              String
+  name             String
+  description      String?   @db.Text
+  fiberContent     Json      // [{ fiber: "wool", percentage: 80 }, ...]
+  weightGsm        Float?
+  widthCm          Float?
+  weaveType        String?
+  finish           String?
+  stretch          Boolean   @default(false)
+  drape            String?
+  seasonality      String[]  @default([])
+  colors           String[]  @default([])
+  pricePerMeter    Float
+  currency         String    @default("USD")
+  moqMeters        Float?
+  leadTimeDays     Int?
+  stockMeters      Float?
+  isActive         Boolean   @default(true)
+  certifications   String[]  @default([])
+  images           String[]  @default([])
+  sustainabilityScore Float? @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  supplierId       String
+  supplier         Supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  orgId            String
+  organization     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  quoteItems       QuoteItem[]
+  orderItems       OrderItem[]
+
+  @@unique([supplierId, sku])
+  @@index([orgId])
+  @@index([supplierId])
+  @@index([isActive])
+  @@map("fabrics")
+}
+
+// ─────────────────────────────────────────────
+// CRM — CONTACTS
+// ─────────────────────────────────────────────
+
+model Contact {
+  id          String        @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  title       String?
+  country     String?
+  city        String?
+  tags        String[]      @default([])
+  notes       String?       @db.Text
+  stage       ContactStage  @default(LEAD)
+  lastContactedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  orgId       String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+
+  opportunities Opportunity[]
+  activities    Activity[]
+
+  @@index([orgId])
+  @@index([stage])
+  @@map("contacts")
+}
+
+enum ContactStage {
+  LEAD
+  PROSPECT
+  ACTIVE
+  DORMANT
+  CHURNED
+}
+
+// ─────────────────────────────────────────────
+// CRM — OPPORTUNITIES (PIPELINE)
+// ─────────────────────────────────────────────
+
+model Opportunity {
+  id                String             @id @default(cuid())
+  title             String
+  value             Float?
+  currency          String             @default("USD")
+  stage             OpportunityStage   @default(DISCOVERY)
+  probability       Int?               @default(10)
+  expectedCloseDate DateTime?
+  actualCloseDate   DateTime?
+  notes             String?            @db.Text
+  tags              String[]           @default([])
+  isWon             Boolean?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  orgId             String
+  organization      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  contactId         String?
+  contact           Contact?  @relation(fields: [contactId], references: [id])
+
+  supplierId        String?
+  supplier          Supplier? @relation(fields: [supplierId], references: [id])
+
+  activities        Activity[]
+  quotes            Quote[]
+
+  @@index([orgId])
+  @@index([stage])
+  @@index([supplierId])
+  @@map("opportunities")
+}
+
+enum OpportunityStage {
+  DISCOVERY
+  SAMPLING
+  QUOTATION
+  NEGOTIATION
+  PRODUCTION
+  SHIPMENT
+  COMPLETED
+  LOST
+}
+
+// ─────────────────────────────────────────────
+// QUOTES & RFQ
+// ─────────────────────────────────────────────
+
+model Quote {
+  id            String      @id @default(cuid())
+  referenceNo   String      @unique
+  title         String?
+  status        QuoteStatus @default(DRAFT)
+  validUntil    DateTime?
+  totalValue    Float?
+  currency      String      @default("USD")
+  notes         String?     @db.Text
+  terms         String?     @db.Text
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  supplierId    String?
+  supplier      Supplier?   @relation(fields: [supplierId], references: [id])
+
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  createdById   String
+  createdBy     User         @relation(fields: [createdById], references: [id])
+
+  items         QuoteItem[]
+
+  @@index([orgId])
+  @@index([status])
+  @@map("quotes")
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  RECEIVED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model QuoteItem {
+  id          String  @id @default(cuid())
+  description String
+  quantity    Float
+  unit        String  @default("meters")
+  unitPrice   Float
+  totalPrice  Float
+  specs       Json?
+
+  quoteId     String
+  quote       Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  fabricId    String?
+  fabric      Fabric? @relation(fields: [fabricId], references: [id])
+
+  @@index([quoteId])
+  @@map("quote_items")
+}
+
+// ─────────────────────────────────────────────
+// ORDERS
+// ─────────────────────────────────────────────
+
+model Order {
+  id            String      @id @default(cuid())
+  orderNo       String      @unique
+  title         String?
+  status        OrderStatus @default(DRAFT)
+  totalValue    Float?
+  currency      String      @default("USD")
+  incoterm      Incoterm    @default(FOB)
+  deliveryDate  DateTime?
+  notes         String?     @db.Text
+  poReference   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  supplierId    String?
+  supplier      Supplier?   @relation(fields: [supplierId], references: [id])
+
+  createdById   String
+  createdBy     User        @relation(fields: [createdById], references: [id])
+
+  items         OrderItem[]
+  shipments     Shipment[]
+  activities    Activity[]
+
+  @@index([orgId])
+  @@index([status])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  SAMPLING
+  PRODUCTION
+  QC
+  PACKING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum Incoterm {
+  FOB
+  CIF
+  EXW
+  DDP
+  CPT
+  CFR
+  DAP
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  description String
+  quantity    Float
+  unit        String  @default("meters")
+  unitPrice   Float
+  totalPrice  Float
+  specs       Json?
+  color       String?
+  finish      String?
+
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  fabricId    String?
+  fabric      Fabric? @relation(fields: [fabricId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// ─────────────────────────────────────────────
+// SHIPMENTS & LOGISTICS
+// ─────────────────────────────────────────────
+
+model Shipment {
+  id              String         @id @default(cuid())
+  reference       String         @unique
+  carrier         String?
+  trackingNumber  String?
+  status          ShipmentStatus @default(BOOKING)
+  incoterm        Incoterm?
+  originCountry   String?
+  destCountry     String?
+  originPort      String?
+  destPort        String?
+  etd             DateTime?
+  eta             DateTime?
+  atd             DateTime?
+  ata             DateTime?
+  grossWeightKg   Float?
+  cbm             Float?
+  containers      String[]       @default([])
+  documents       Json?
+  notes           String?        @db.Text
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  orgId           String
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  orderId         String?
+  order           Order?       @relation(fields: [orderId], references: [id])
+
+  @@index([orgId])
+  @@index([status])
+  @@map("shipments")
+}
+
+enum ShipmentStatus {
+  BOOKING
+  PICKUP
+  TRANSIT
+  CUSTOMS
+  DELIVERY
+  DELIVERED
+  DELAYED
+  CANCELLED
+}
+
+// ─────────────────────────────────────────────
+// ACTIVITIES
+// ─────────────────────────────────────────────
+
+model Activity {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  content     String       @db.Text
+  entityType  String?
+  entityId    String?
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+
+  orgId       String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+
+  contactId   String?
+  contact     Contact?    @relation(fields: [contactId], references: [id])
+
+  opportunityId String?
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  orderId     String?
+  order       Order?      @relation(fields: [orderId], references: [id])
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+enum ActivityType {
+  NOTE
+  CALL
+  EMAIL
+  MEETING
+  TASK
+  SYSTEM
+}
+
+// ─────────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  orgId       String
+  userId      String
+  action      String
+  entityType  String
+  entityId    String
+  changes     Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
