@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-editorial: 'Canela', 'Georgia', serif;
+
+  /* Luxury palette */
+  --color-ivory: #F7F3EE;
+  --color-espresso: #1E1B18;
+  --color-muted: #6E6258;
+  --color-gold: #B68A5A;
+  --color-deep: #221C17;
+  --color-border: rgba(0,0,0,0.08);
+
+  /* Spacing rhythm */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-inter);
+  background-color: var(--color-ivory);
+  color: var(--color-espresso);
+  min-height: 100vh;
+}
+
+/* ──────────────────────────────────────────────
+   TYPOGRAPHY
+────────────────────────────────────────────── */
+
+.font-editorial {
+  font-family: var(--font-editorial);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-inter);
+  font-weight: 500;
+  color: var(--color-espresso);
+}
+
+/* ──────────────────────────────────────────────
+   SCROLLBARS
+────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(110, 98, 88, 0.3);
+  border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(110, 98, 88, 0.5);
+}
+
+/* ──────────────────────────────────────────────
+   LUXURY CARD
+────────────────────────────────────────────── */
+
+.card-luxury {
+  @apply bg-white rounded-2xl border border-black/[0.06] shadow-luxury;
+}
+
+.card-luxury-hover {
+  @apply card-luxury transition-all duration-300 hover:shadow-luxury-lg hover:-translate-y-0.5;
+}
+
+/* ──────────────────────────────────────────────
+   BADGES
+────────────────────────────────────────────── */
+
+.badge {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-gold {
+  @apply badge bg-gold/10 text-gold border border-gold/20;
+}
+
+.badge-green {
+  @apply badge bg-emerald-50 text-emerald-700 border border-emerald-200;
+}
+
+.badge-blue {
+  @apply badge bg-blue-50 text-blue-700 border border-blue-200;
+}
+
+.badge-amber {
+  @apply badge bg-amber-50 text-amber-700 border border-amber-200;
+}
+
+.badge-red {
+  @apply badge bg-red-50 text-red-600 border border-red-200;
+}
+
+.badge-slate {
+  @apply badge bg-slate-100 text-slate-600 border border-slate-200;
+}
+
+/* ──────────────────────────────────────────────
+   BUTTONS
+────────────────────────────────────────────── */
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
+         bg-gold text-white font-medium text-sm
+         transition-all duration-200
+         hover:bg-gold-dark active:scale-95
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
+         bg-white text-espresso font-medium text-sm border border-black/10
+         transition-all duration-200
+         hover:bg-ivory active:scale-95
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/30;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
+         text-muted font-medium text-sm
+         transition-all duration-200
+         hover:bg-black/5 hover:text-espresso active:scale-95
+         focus-visible:outline-none;
+}
+
+/* ──────────────────────────────────────────────
+   FORM ELEMENTS
+────────────────────────────────────────────── */
+
+.input-luxury {
+  @apply w-full px-4 py-3 rounded-xl border border-black/10 bg-white
+         text-espresso text-sm placeholder:text-muted/60
+         transition-all duration-200
+         focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold/40;
+}
+
+/* ──────────────────────────────────────────────
+   SIDEBAR (dark)
+────────────────────────────────────────────── */
+
+.sidebar-nav-item {
+  @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+         text-white/60 transition-all duration-200
+         hover:bg-white/10 hover:text-white;
+}
+
+.sidebar-nav-item.active {
+  @apply bg-white/10 text-white;
+}
+
+/* ──────────────────────────────────────────────
+   ANIMATIONS
+────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.8) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ──────────────────────────────────────────────
+   KANBAN
+────────────────────────────────────────────── */
+
+.kanban-column {
+  @apply flex flex-col gap-3 min-w-[280px] max-w-[280px];
+}
+
+.kanban-card {
+  @apply card-luxury p-4 cursor-grab active:cursor-grabbing select-none
+         transition-all duration-200 hover:shadow-luxury-lg;
+}
+
+/* ──────────────────────────────────────────────
+   STAT CARD
+────────────────────────────────────────────── */
+
+.stat-card {
+  @apply card-luxury p-6 flex flex-col gap-2;
+}
+
+/* ──────────────────────────────────────────────
+   RESPONSIVE HELPERS
+────────────────────────────────────────────── */
+
+.platform-container {
+  @apply max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8;
+}
