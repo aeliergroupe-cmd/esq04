@@ -1,0 +1,26 @@
+{
+  "name": "nobility",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.4.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
+    "db:studio": "pnpm --filter @nobility/database run studio",
+    "clean": "turbo run clean && find . -name 'node_modules' -type d -prune -exec rm -rf {} +"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.2",
+    "typescript": "^5.5.3",
+    "prettier": "^3.3.3",
+    "@types/node": "^20.14.12"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
