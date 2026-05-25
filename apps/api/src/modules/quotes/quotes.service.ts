@@ -20,7 +20,26 @@ export class QuotesService {
     })
   }
 
+  async create(orgId: string, data: any) {
+    const { items, ...quoteData } = data
+    const referenceNo = `RFQ-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`
+    return this.prisma.quote.create({
+      data: {
+        ...quoteData,
+        orgId,
+        referenceNo,
+        status: 'DRAFT',
+        items: { create: items ?? [] },
+      },
+      include: { items: true },
+    })
+  }
+
   async updateStatus(id: string, orgId: string, status: string) {
-    return this.prisma.quote.update({ where: { id }, data: { status: status as any } })
+    return this.prisma.quote.update({
+      where: { id },
+      data: { status: status as any },
+      include: { items: true },
+    })
   }
 }

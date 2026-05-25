@@ -1,23 +1,9 @@
-import { Resolver, Query, Args, Context, ObjectType, Field, ID, Float, Int } from '@nestjs/graphql'
+import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql'
 import { UseGuards } from '@nestjs/common'
+import { Fabric } from './models/fabric.model'
+import { CreateFabricInput } from './dto/create-fabric.input'
 import { FabricsService } from './fabrics.service'
 import { GqlAuthGuard } from '../../auth/gql-auth.guard'
-
-@ObjectType()
-class Fabric {
-  @Field(() => ID) id: string
-  @Field() sku: string
-  @Field() name: string
-  @Field({ nullable: true }) description?: string
-  @Field(() => Float) pricePerMeter: number
-  @Field() currency: string
-  @Field(() => Float, { nullable: true }) moqMeters?: number
-  @Field(() => Int, { nullable: true }) leadTimeDays?: number
-  @Field({ defaultValue: true }) isActive: boolean
-  @Field() supplierId: string
-  @Field() orgId: string
-  @Field() createdAt: Date
-}
 
 @Resolver(() => Fabric)
 export class FabricsResolver {
@@ -38,5 +24,11 @@ export class FabricsResolver {
   @UseGuards(GqlAuthGuard)
   fabric(@Args('id') id: string, @Context() ctx: any) {
     return this.service.findOne(id, ctx.req.user.orgId)
+  }
+
+  @Mutation(() => Fabric)
+  @UseGuards(GqlAuthGuard)
+  createFabric(@Args('input') input: CreateFabricInput, @Context() ctx: any) {
+    return this.service.create(ctx.req.user.orgId, input)
   }
 }

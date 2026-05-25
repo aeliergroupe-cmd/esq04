@@ -23,20 +23,49 @@ export class AnalyticsService {
       }),
     ])
 
+    const avgDealValue =
+      activeDeals > 0 ? (pipelineResult._sum.value ?? 0) / activeDeals : 0
+
     return {
-      pipelineValue: pipelineResult._sum.value || 0,
+      pipelineValue: pipelineResult._sum.value ?? 0,
       activeDeals,
-      openOrders,
+      openRFQs: await this.prisma.quote.count({
+        where: { orgId, status: { in: ['DRAFT', 'SENT', 'RECEIVED'] } },
+      }),
       shipmentsInTransit,
+      avgDealValue,
     }
   }
 
-  async getSupplierStats(orgId: string) {
-    return this.prisma.supplier.groupBy({
+  async getPipelineByStage(orgId: string) {
+    const stages = ['DISCOVERY', 'SAMPLING', 'QUOTATION', 'NEGOTIATION', 'PRODUCTION', 'SHIPMENT', 'COMPLETED']
+    const results = await Promise.all(
+      stages.map(async (stage) => {
+        const agg = await this.prisma.opportunity.aggregate({
+          where: { orgId, stage: stage as any },
+          _count: true,
+          _sum: { value: true },
+        })
+        return {
+          stage,
+          count: agg._count,
+          totalValue: agg._sum.value ?? 0,
+        }
+      })
+    )
+    return results
+  }
+
+  async getSuppliersByCountry(orgId: string) {
+    const grouped = await this.prisma.supplier.groupBy({
       by: ['country'],
       where: { orgId, isActive: true },
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
     })
+    return grouped.map((g) => ({
+      country: g.country,
+      supplierCount: g._count.id,
+    }))
   }
 }

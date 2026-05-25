@@ -1,21 +1,9 @@
-import { Resolver, Query, Args, Context, ObjectType, Field, ID } from '@nestjs/graphql'
+import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql'
 import { UseGuards } from '@nestjs/common'
+import { Contact } from './models/contact.model'
+import { CreateContactInput } from './dto/create-contact.input'
 import { ContactsService } from './contacts.service'
 import { GqlAuthGuard } from '../../auth/gql-auth.guard'
-
-@ObjectType()
-class Contact {
-  @Field(() => ID) id: string
-  @Field() name: string
-  @Field({ nullable: true }) email?: string
-  @Field({ nullable: true }) phone?: string
-  @Field({ nullable: true }) title?: string
-  @Field({ nullable: true }) country?: string
-  @Field() stage: string
-  @Field(() => [String]) tags: string[]
-  @Field() orgId: string
-  @Field() createdAt: Date
-}
 
 @Resolver(() => Contact)
 export class ContactsResolver {
@@ -23,7 +11,22 @@ export class ContactsResolver {
 
   @Query(() => [Contact])
   @UseGuards(GqlAuthGuard)
-  contacts(@Context() ctx: any, @Args('stage', { nullable: true }) stage?: string) {
+  contacts(
+    @Context() ctx: any,
+    @Args('stage', { nullable: true }) stage?: string,
+  ) {
     return this.service.findAll(ctx.req.user.orgId, stage)
+  }
+
+  @Query(() => Contact, { nullable: true })
+  @UseGuards(GqlAuthGuard)
+  contact(@Args('id') id: string, @Context() ctx: any) {
+    return this.service.findOne(id, ctx.req.user.orgId)
+  }
+
+  @Mutation(() => Contact)
+  @UseGuards(GqlAuthGuard)
+  createContact(@Args('input') input: CreateContactInput, @Context() ctx: any) {
+    return this.service.create(ctx.req.user.orgId, input)
   }
 }

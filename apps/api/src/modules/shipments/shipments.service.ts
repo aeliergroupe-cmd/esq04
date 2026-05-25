@@ -5,9 +5,13 @@ import { PrismaService } from '../../prisma/prisma.service'
 export class ShipmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(orgId: string, status?: string) {
+  async findAll(orgId: string, filters?: { status?: string; orderId?: string }) {
     return this.prisma.shipment.findMany({
-      where: { orgId, ...(status && { status: status as any }) },
+      where: {
+        orgId,
+        ...(filters?.status && { status: filters.status as any }),
+        ...(filters?.orderId && { orderId: filters.orderId }),
+      },
       orderBy: { createdAt: 'desc' },
     })
   }
@@ -16,7 +20,14 @@ export class ShipmentsService {
     return this.prisma.shipment.findFirst({ where: { id, orgId } })
   }
 
+  async create(orgId: string, data: any) {
+    return this.prisma.shipment.create({ data: { ...data, orgId } })
+  }
+
   async updateStatus(id: string, orgId: string, status: string) {
-    return this.prisma.shipment.update({ where: { id }, data: { status: status as any } })
+    return this.prisma.shipment.update({
+      where: { id },
+      data: { status: status as any },
+    })
   }
 }

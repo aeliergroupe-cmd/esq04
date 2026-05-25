@@ -20,7 +20,27 @@ export class OrdersService {
     })
   }
 
+  async create(orgId: string, data: any) {
+    const { items, ...orderData } = data
+    const year = new Date().getFullYear()
+    const seq = String(Date.now()).slice(-4)
+    const orderNo = `NOB-${year}-${seq}`
+    return this.prisma.order.create({
+      data: {
+        ...orderData,
+        orgId,
+        orderNo,
+        items: { create: items ?? [] },
+      },
+      include: { items: true },
+    })
+  }
+
   async updateStatus(id: string, orgId: string, status: string) {
-    return this.prisma.order.update({ where: { id }, data: { status: status as any } })
+    return this.prisma.order.update({
+      where: { id },
+      data: { status: status as any },
+      include: { items: true },
+    })
   }
 }

@@ -1,22 +1,9 @@
-import { Resolver, Query, Mutation, Args, Context, ObjectType, Field, ID, Float } from '@nestjs/graphql'
+import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql'
 import { UseGuards } from '@nestjs/common'
+import { Order } from './models/order.model'
+import { CreateOrderInput } from './dto/create-order.input'
 import { OrdersService } from './orders.service'
 import { GqlAuthGuard } from '../../auth/gql-auth.guard'
-
-@ObjectType()
-class Order {
-  @Field(() => ID) id: string
-  @Field() orderNo: string
-  @Field({ nullable: true }) title?: string
-  @Field() status: string
-  @Field(() => Float, { nullable: true }) totalValue?: number
-  @Field() currency: string
-  @Field() incoterm: string
-  @Field({ nullable: true }) deliveryDate?: Date
-  @Field({ nullable: true }) supplierId?: string
-  @Field() orgId: string
-  @Field() createdAt: Date
-}
 
 @Resolver(() => Order)
 export class OrdersResolver {
@@ -24,8 +11,23 @@ export class OrdersResolver {
 
   @Query(() => [Order])
   @UseGuards(GqlAuthGuard)
-  orders(@Context() ctx: any, @Args('status', { nullable: true }) status?: string) {
+  orders(
+    @Context() ctx: any,
+    @Args('status', { nullable: true }) status?: string,
+  ) {
     return this.service.findAll(ctx.req.user.orgId, status)
+  }
+
+  @Query(() => Order, { nullable: true })
+  @UseGuards(GqlAuthGuard)
+  order(@Args('id') id: string, @Context() ctx: any) {
+    return this.service.findOne(id, ctx.req.user.orgId)
+  }
+
+  @Mutation(() => Order)
+  @UseGuards(GqlAuthGuard)
+  createOrder(@Args('input') input: CreateOrderInput, @Context() ctx: any) {
+    return this.service.create(ctx.req.user.orgId, input)
   }
 
   @Mutation(() => Order)

@@ -1,25 +1,9 @@
-import { Resolver, Query, Args, Context, ObjectType, Field, ID, Float } from '@nestjs/graphql'
+import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql'
 import { UseGuards } from '@nestjs/common'
+import { Shipment } from './models/shipment.model'
+import { CreateShipmentInput } from './dto/create-shipment.input'
 import { ShipmentsService } from './shipments.service'
 import { GqlAuthGuard } from '../../auth/gql-auth.guard'
-
-@ObjectType()
-class Shipment {
-  @Field(() => ID) id: string
-  @Field() reference: string
-  @Field({ nullable: true }) carrier?: string
-  @Field({ nullable: true }) trackingNumber?: string
-  @Field() status: string
-  @Field({ nullable: true }) originCountry?: string
-  @Field({ nullable: true }) destCountry?: string
-  @Field({ nullable: true }) originPort?: string
-  @Field({ nullable: true }) destPort?: string
-  @Field({ nullable: true }) etd?: Date
-  @Field({ nullable: true }) eta?: Date
-  @Field({ nullable: true }) orderId?: string
-  @Field() orgId: string
-  @Field() createdAt: Date
-}
 
 @Resolver(() => Shipment)
 export class ShipmentsResolver {
@@ -27,7 +11,33 @@ export class ShipmentsResolver {
 
   @Query(() => [Shipment])
   @UseGuards(GqlAuthGuard)
-  shipments(@Context() ctx: any, @Args('status', { nullable: true }) status?: string) {
-    return this.service.findAll(ctx.req.user.orgId, status)
+  shipments(
+    @Context() ctx: any,
+    @Args('status', { nullable: true }) status?: string,
+    @Args('orderId', { nullable: true }) orderId?: string,
+  ) {
+    return this.service.findAll(ctx.req.user.orgId, { status, orderId })
+  }
+
+  @Query(() => Shipment, { nullable: true })
+  @UseGuards(GqlAuthGuard)
+  shipment(@Args('id') id: string, @Context() ctx: any) {
+    return this.service.findOne(id, ctx.req.user.orgId)
+  }
+
+  @Mutation(() => Shipment)
+  @UseGuards(GqlAuthGuard)
+  createShipment(@Args('input') input: CreateShipmentInput, @Context() ctx: any) {
+    return this.service.create(ctx.req.user.orgId, input)
+  }
+
+  @Mutation(() => Shipment)
+  @UseGuards(GqlAuthGuard)
+  updateShipmentStatus(
+    @Args('id') id: string,
+    @Args('status') status: string,
+    @Context() ctx: any,
+  ) {
+    return this.service.updateStatus(id, ctx.req.user.orgId, status)
   }
 }

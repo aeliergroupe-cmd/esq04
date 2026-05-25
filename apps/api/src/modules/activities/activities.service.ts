@@ -5,12 +5,15 @@ import { PrismaService } from '../../prisma/prisma.service'
 export class ActivitiesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(orgId: string, limit = 20) {
+  async findAll(orgId: string, filters?: { limit?: number; entityId?: string }) {
     return this.prisma.activity.findMany({
-      where: { orgId },
+      where: {
+        orgId,
+        ...(filters?.entityId && { entityId: filters.entityId }),
+      },
       include: { user: { select: { name: true, avatar: true } } },
       orderBy: { createdAt: 'desc' },
-      take: limit,
+      take: filters?.limit ?? 20,
     })
   }
 
